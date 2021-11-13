@@ -18,7 +18,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         await client.connect();
-        console.log("connected");
+        // console.log("connected");
         const database = client.db('bag_bang');
         const usersCollection = database.collection('users');
         const reviewsCollection = database.collection('reviews');
@@ -30,7 +30,6 @@ async function run() {
         app.post('/orders', async (req, res) => {
             const order = req.body
             const result = await orderCollection.insertOne(order);
-            console.log(order);
             res.json(result);
         })
 
@@ -44,6 +43,14 @@ async function run() {
 
         })
 
+        //All Orders Api
+        app.get('/orders', async (req, res) => {
+            const cursor = orderCollection.find({});
+            const allOrders = await cursor.toArray();
+            res.send(allOrders);
+
+        })
+
         //delete order api
         app.delete('/orders/:id', async (req, res) => {
             const id = req.params.id;
@@ -52,11 +59,28 @@ async function run() {
             res.json(result);
         })
 
+        //Update status Order api
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateStatus = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: updateStatus.status
+
+                },
+            };
+
+            const options = { upsert: true };
+            const result = await orderCollection.updateOne(filter, updateDoc, options);
+            res.json(result);
+
+        })
+
         //Product Post Api
         app.post('/products', async (req, res) => {
             const product = req.body;
             const result = await productsCollection.insertOne(product)
-            console.log(product);
             res.json(result);
         })
 
@@ -76,11 +100,20 @@ async function run() {
 
         })
 
+        //Delete Product delete Api
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(query);
+            res.json(result);
+        })
+
+
+
         //reviews post api
         app.post('/reviews', async (req, res) => {
             const review = req.body;
             const result = await reviewsCollection.insertOne(review)
-            console.log(review);
             res.json(result);
         })
         //reviews get Api
@@ -89,6 +122,8 @@ async function run() {
             const reviews = await cursor.toArray();
             res.json(reviews);
         })
+
+
         //get  user role api
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -104,14 +139,12 @@ async function run() {
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user)
-            console.log(user);
             res.json(result);
         })
 
         //user put Api
         app.put('/users', async (req, res) => {
             const user = req.body;
-            console.log(user);
             const filter = { email: user.email };
             const options = { upsert: true };
             const updateDoc = { $set: user };
@@ -122,7 +155,6 @@ async function run() {
         //Update User Role  Api
         app.put('/users/admin', async (req, res) => {
             const user = req.body;
-            console.log(user);
             const filter = { email: user.email };
             const updateDoc = { $set: { role: "admin" } };
             const result = await usersCollection.updateOne(filter, updateDoc);
