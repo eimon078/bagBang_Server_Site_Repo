@@ -2,6 +2,7 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const cors = require('cors')
 require('dotenv').config()
+const ObjectId = require('mongodb').ObjectId;
 const app = express();
 const port = process.env.PORT || 7000;
 
@@ -20,9 +21,60 @@ async function run() {
         console.log("connected");
         const database = client.db('bag_bang');
         const usersCollection = database.collection('users');
-        const reviewsCollection = database.collection('reviews')
+        const reviewsCollection = database.collection('reviews');
+        const productsCollection = database.collection('products');
+        const orderCollection = database.collection('orders');
 
 
+        //Order Post Api
+        app.post('/orders', async (req, res) => {
+            const order = req.body
+            const result = await orderCollection.insertOne(order);
+            console.log(order);
+            res.json(result);
+        })
+
+        //match order api 
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { email: id }
+            const cursor = orderCollection.find(query);
+            const result = await cursor.toArray();
+            res.json(result);
+
+        })
+
+        //delete order api
+        app.delete('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
+            res.json(result);
+        })
+
+        //Product Post Api
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productsCollection.insertOne(product)
+            console.log(product);
+            res.json(result);
+        })
+
+        //Product get Api
+        app.get('/products', async (req, res) => {
+            const cursor = productsCollection.find({});
+            const products = await cursor.toArray();
+            res.json(products);
+        })
+
+        //get single Product Api
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const product = await productsCollection.findOne(query);
+            res.json(product);
+
+        })
 
         //reviews post api
         app.post('/reviews', async (req, res) => {
